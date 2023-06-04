@@ -1,47 +1,40 @@
 from aiogram.dispatcher import FSMContext
 from aiogram.types import Message, CallbackQuery, ChatType
 from bot_app import markups, misc, db, config
+from bot_app.db.users import get_user, create_user
+from bot_app.markups.base import links_ikb
 from bot_app.misc import bot, dp, _, _l
 
+channels_id = ['@BinanceUkrainian', '@rand2ch', '@Lepragram']
 
-@dp.message_handler(commands='start', state='*', chat_type=ChatType.PRIVATE)
-async def process_start(message: Message, state: FSMContext, locale):
+
+@dp.message_handler(commands='start', state='*')
+async def process_start(message: Message, state: FSMContext):
     await state.finish()
-    user_data = await db.users.get_user(message.from_user.id)
-    if user_data is None:
-        await db.users.create_user(message.from_user)
-        await bot.send_message(message.from_user.id,
-                               _('Welcome to the transaction notification bot.\n'
-                                 'Please select a language.\n'
-                                 '<b>It can be changed later in the settings.</b>'),
-                               reply_markup=markups.base.language_menu())
-        return
-    await bot.send_message(message.from_user.id,
-                           _('You are in the main menu.\n'),
-                           reply_markup=markups.user.main.main_menu(locale))
+    user_check = await get_user(message.from_user.id)
+    ref = message.get_args()
+    if user_check is not None:
+        await bot.send_message(message.from_user.id, text='Ви вже є нашим учаснимом')
+    else:
+        user_data = await get_user(message.from_user.id)
+        await create_user(message.from_user)
+        await bot.send_message(message.from_user.id, text='Тримай ссилки на канали', reply_markup=links_ikb())
+        await db.users.add_refferal(ref[3:], message.from_user.id)
+        print(message.get_args())
 
 
-@dp.message_handler(text=_l('👨 Change Language'))
-async def get_language_menu(message: Message):
-    await bot.send_message(message.from_user.id,
-                           _('Welcome to the transaction notification bot.\n'
-                             'Please select a language.\n'
-                             '<b>It can be changed later in the settings.</b>'),
-                           reply_markup=markups.base.language_menu())
-
-
-@dp.callback_query_handler(text_startswith='set-lang_', state='*', chat_type=ChatType.PRIVATE)
-async def change_user_language(call: CallbackQuery, state: FSMContext):
-    chosen_locale = call.data.split('_')[-1]
-    await state.finish()
-    await misc.set_lang(call.from_user.id, chosen_locale)
-
-    await call.answer(_('The language has been successfully changed to: {language}',
-                        locale=chosen_locale).format(language=call.data.split('_')[-1]),
-                      show_alert=True)
-    await call.message.delete()
-
-    await bot.send_message(call.from_user.id,
-                           text=_('You are in the main menu', locale=chosen_locale),
-                           reply_markup=markups.user.main.main_menu(chosen_locale))
-
+#
+# @dp.callback_query_handler(CallbackQuery)
+# async def check_connection(call: CallbackQuery):
+#     await bot.send_message(text='Проверить подписки на каналы', reply_markup=check_if_exist())
+#
+#
+# @dp.message_handler(text='Перевірити підписки')
+# async def checker(message: Message):
+#     for channel in channels_id:
+#         try:
+#             result = bot.get_chat_member(chat_id=channel, user_id=message.from_user.id)
+#             if result.status == 'left':
+#                 await bot.send_message(message.from_user.id, text=f'Ви не підписані на канал @{channel}')
+#                 break
+#             else:

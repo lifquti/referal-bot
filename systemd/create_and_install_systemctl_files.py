@@ -38,12 +38,12 @@ if not os.path.exists(os.path.join(parent_path, 'env')):
 
 
 if not os.path.exists(os.path.join(parent_path, '.env')):
-    print('cant find .env file! creating it from .env.sample!')
-    if not os.path.exists(os.path.join(parent_path, '.env.sample')):
-        print('.env.sample file does not exists!')
+    print('cant find .env file! creating it from .env!')
+    if not os.path.exists(os.path.join(parent_path, '.env')):
+        print('.env file does not exists!')
         sys.exit(-1)
     with open(os.path.join(parent_path, '.env'), 'w') as new_env_file:
-        new_env_file.write(open(os.path.join(parent_path, '.env.sample'), 'r').read())
+        new_env_file.write(open(os.path.join(parent_path, '.env'), 'r').read())
     if os.path.exists(os.path.join(parent_path, '.env')):
         print(f"{bcolors.OKGREEN} .env file created! {bcolors.ENDC}")
     else:
