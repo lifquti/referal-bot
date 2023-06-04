@@ -1,0 +1,60 @@
+sudo apt install certbot python3-certbot-nginx
+
+sudo ufw allow 22
+sudo ufw allow 'Nginx Full'
+sudo ufw delete allow 'Nginx HTTP'
+sudo ufw enable
+sudo certbot --nginx -d code-creator-bot.telegram-crm.work
+sudo certbot --nginx -d code-creator-admin.telegram-crm.work
+sudo certbot --nginx -d test-payouts-api.telegram-crm.work
+
+
+jet-bot.cakealliance.io
+support-bot.cakealliance.io
+admin-bot.cakealliance.io
+client-bot.cakealliance.io
+wb-callback.cakealliance.io
+
+mkdir /etc/nginx/cross-pay-callback
+mkdir /etc/nginx/code-creator-admin
+
+nano /etc/nginx/sites-available/default
+
+
+include /etc/nginx/code-creator-bot/*.conf;
+include /etc/nginx/code-creator-admin/*.conf;
+
+
+gunicorn --bind 0.0.0.0:8000 admin_panel.wsgi
+
+
+nano /etc/nginx/code-creator-bot/bot.conf
+mkdir /var/log/gunicorn
+sudo nano /etc/systemd/system/whitebit_trader_admin_gunicorn.service
+
+
+
+[Unit]
+Description=gunicorn daemon
+After=network.target
+
+[Service]
+User=root
+Group=www-data
+WorkingDirectory=/home/bot_cash_code_creator/admin_panel
+ExecStart=/home/bot_cash_code_creator/env/bin/gunicorn --access-logfile - --workers 3 --bind unix:/var/log/gunicorn/bot_cash_code_creator_admin.sock admin_panel.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
+
+nano /etc/nginx/code-creator-admin/web.conf
+
+
+location / {
+    include proxy_params;
+    proxy_pass http://unix:/var/log/gunicorn/bot_cash_code_creator_admin.sock;
+}
+
+location /static {
+        root /var/www;
+}

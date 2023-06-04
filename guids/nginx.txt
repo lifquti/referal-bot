@@ -1,0 +1,114 @@
+sudo mkdir /etc/nginx/ssl
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/nginx/ssl/nginx.key -out /etc/nginx/ssl/nginx.crt
+
+mkdir /etc/nginx/bots
+
+
+nano /etc/nginx/sites-available/default
+
+server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+
+        root /var/www/html;
+
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name _;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }}
+server {
+        listen 443 ssl;
+        server_name _;
+
+        ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
+        ssl_certificate /etc/nginx/ssl/nginx.crt;
+        ssl_certificate_key /etc/nginx/ssl/nginx.key;
+
+        include /etc/nginx/bots/*.conf;
+}
+
+
+nano /etc/nginx/application-manager-callback/api.conf
+
+
+chat_rank_and_reputation
+
+location / {
+            proxy_pass         http://127.0.0.1:2201;
+            proxy_redirect     off;
+            proxy_set_header   Host $host;
+            proxy_set_header   X-Real-IP $remote_addr;
+            proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host $server_name;
+}
+
+location /jet_api_method/ {
+            proxy_pass         http://127.0.0.1:2890;
+            proxy_redirect     off;
+            proxy_set_header   Host $host;
+            proxy_set_header   X-Real-IP $remote_addr;
+            proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host $server_name;
+}
+
+
+nano /etc/nginx/nginx.conf
+
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+
+include /etc/nginx/whiteexchange_callback/*.conf;
+
+events {
+  worker_connections 768;
+}
+
+http {
+  sendfile on;
+  client_max_body_size 64M;
+  tcp_nopush on;
+  tcp_nodelay on;
+  keepalive_timeout 65;
+  types_hash_max_size 2048;
+
+  include /etc/nginx/mime.types;
+  default_type application/octet-stream;
+
+  ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+  ssl_prefer_server_ciphers on;
+
+  access_log /var/log/nginx/access.log;
+  error_log /var/log/nginx/error.log;
+
+  gzip on;
+
+  include /etc/nginx/conf.d/*.conf;
+  include /etc/nginx/sites-enabled/*;
+}
+
+
+server {
+        root /var/www/html;
+        index index.html index.htm index.nginx-debian.html;
+    server_name payouts-bot.telegram-crm.work; # managed by Certbot
+
+        location / {
+
+                try_files $uri $uri/ =404;
+        }
+
+
+    listen [::]:443 ssl ipv6only=on; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/payouts-bot.telegram-crm.work/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/payouts-bot.telegram-crm.work/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+    include /etc/nginx/conf.d/*.conf;
+
+}
