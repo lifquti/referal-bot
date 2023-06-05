@@ -1,11 +1,10 @@
 from aiogram.dispatcher import FSMContext
 from aiogram.types import Message, CallbackQuery, ChatType
 from bot_app import markups, misc, db, config
+from bot_app.db.admin import get_all_tasks
 from bot_app.db.users import get_user, create_user
 from bot_app.markups.base import links_ikb
 from bot_app.misc import bot, dp, _, _l
-
-channels_id = ['@BinanceUkrainian', '@rand2ch', '@Lepragram']
 
 
 @dp.message_handler(commands='start', state='*')
@@ -18,9 +17,13 @@ async def process_start(message: Message, state: FSMContext):
     else:
         user_data = await get_user(message.from_user.id)
         await create_user(message.from_user)
-        await bot.send_message(message.from_user.id, text='Тримай ссилки на канали', reply_markup=links_ikb())
+        all_tasks = await get_all_tasks()
+        await bot.send_message(message.from_user.id, text='Тримай ссилки на канали',
+                               reply_markup=links_ikb(all_tasks, message.from_user.id))
         await db.users.add_refferal(ref[3:], message.from_user.id)
-        print(message.get_args())
+
+
+
 
 
 #
