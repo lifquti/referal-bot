@@ -48,5 +48,28 @@ async def update_locale(user_id: int, new_locale_code: str):
     await con.ensure_closed()
 
 
-async def add_task(name_task, link, status):
+async def check_start_task():
     con, cur = await create_dict_con()
+    await cur.execute('select url from start_task')
+    urls_list = await cur.fetchall()
+    await con.ensure_closed()
+    return urls_list
+
+
+async def add_balance(id):
+    con, cur = await create_dict_con()
+    await cur.execute('UPDATE data_tg_user SET balance = balance + 5 WHERE user_id = %s', (id, ))
+    await con.commit()
+    await con.ensure_closed()
+
+
+async def get_referal(id):
+    con, cur = await create_dict_con()
+    await cur.execute('select refer_from from data_tg_user where user_id = %S', (id, ))
+    refer_id = await cur.fetchone()
+    await con.ensure_closed()
+    return refer_id
+
+
+
+
