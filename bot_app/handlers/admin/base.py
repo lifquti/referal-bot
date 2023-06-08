@@ -4,8 +4,8 @@ import aiogram
 from aiogram.dispatcher import FSMContext
 from aiogram.types import Message
 
-from bot_app.db.admin import set_task_db, get_all_tasks
-from bot_app.markups.admin.base import status_keyboard, cancel, admin_menu
+from bot_app.db.admin import set_task_db, get_all_tasks, get_all_new_tasks, change_amin_task
+from bot_app.markups.admin.base import status_keyboard, cancel, admin_menu, task_keyboard
 from bot_app.misc import bot, dp, _, _l
 from bot_app import markups, config
 from bot_app.misc import bot, dp
@@ -51,11 +51,9 @@ async def wrong_url(message: Message, state: FSMContext):
 
         return
 
-    #TODO update link
-    await state.update_data({'status': message.text})
-
-    await state.set_state(Admin.Task.status)
+    await state.update_data({'url': message.text})
     await bot.send_message(message.from_user.id, text='Виберіть статус завдання', reply_markup=status_keyboard())
+    await state.set_state(Admin.Task.status)
 
 
 @dp.message_handler(aiogram.filters.IDFilter(chat_id=config.ADMINS_ID), state=Admin.Task.status)
@@ -80,8 +78,71 @@ async def add_to_db(message: Message, state: FSMContext):
     await state.finish()
 
 
-# @dp.message_handler(aiogram.filters.IDFilter(chat_id=config.ADMINS_ID), text='Перелік завдань')
-# async def task_list(message: Message, state: FSMContext):
-#     all_tasks = await get_all_tasks()
-#     for task in all_tasks:
+@dp.message_handler(aiogram.filters.IDFilter(chat_id=config.ADMINS_ID), text='Перелік завдань')
+async def task_list(message: Message, state: FSMContext):
+    await bot.send_message(message.from_user.id, text='Виберіть які саме завдання', reply_markup=task_keyboard())
 
+
+@dp.message_handler(aiogram.filters.IDFilter(chat_id=config.ADMINS_ID), text='Початкові завдання')
+async def main_tasks_list(message: Message, state: FSMContext):
+    all_tasks = await get_all_tasks()
+    list_of_orders = [', '.join(str(value) for key, value in one_task.items()) for one_task in all_tasks]
+    new_list = []
+    for task in list_of_orders:
+        task = '/' + task
+        new_list.append(task)
+
+    tasks_text = '\n\n'.join(new_list)
+    if tasks_text:
+        await bot.send_message(message.from_user.id, text='Всі завдання:\n\n{}\n\n Щоб змінити натисніть на назву'.format(tasks_text) ,
+                               reply_markup=cancel())
+        await state.set_state(Admin.Edit_task.name_to_edit)
+
+
+@dp.message_handler(aiogram.filters.IDFilter(chat_id=config.ADMINS_ID), state=Admin.Edit_task.name_to_edit)
+async def name_to_edit(message: Message, state: FSMContext):
+    await state.update_data({'name_to_edit': message.text[1:]})
+    await bot.send_message(message.from_user.id, text='Напишіть нижче на що хочете змінити назву(кнопки):', reply_markup=cancel())
+    await state.set_state(Admin.Edit_task.name)
+
+
+@dp.message_handler(aiogram.filters.IDFilter(chat_id=config.ADMINS_ID), state=Admin.Edit_task.name)
+async def new_name_to_task(message: Message, state: FSMContext):
+    await state.update_data({'name': message.text})
+    await bot.send_message(message.from_user.id, text='Відправте нову силку:')
+    await state.set_state(Admin.Edit_task.new_url)
+
+
+@dp.message_handler(aiogram.filters.IDFilter(chat_id=config.ADMINS_ID), state=Admin.Edit_task.new_url)
+async def url_new_task(message: Message, state: FSMContext):
+    regexp = re.compile(
+        r'(?:http[s]?:\/\/.)?[-a-zA-Z0-9@%._\+~#=]{1,256}\.[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)')
+    matches = re.findall(regexp, message.text)
+    if not matches:
+        await bot.send_message(message.from_user.id,
+                               text='Не правильно написана силка, ось вам приклад, спробуйте знову:\n'
+                                    'https://t.me/referal3_bot',)
+
+        return
+
+    await state.update_data(Admin.Edit_task.new_url)
+    edited_task = await state.get_data(Admin.Edit_task)
+    await change_amin_task(edited_task)
+    await bot.send_message(message.from_user.id, text='Змінено')
+
+
+@dp.message_handler(aiogram.filters.IDFilter(chat_id=config.ADMINS_ID), text='Додаткові завдання')
+async def main_tasks_list(message: Message, state: FSMContext):
+    all_tasks = await get_all_new_tasks()
+
+    tasks_text = ''
+    for one_task in all_tasks:
+        task_items = []
+        for key, value in one_task.items():
+            if key != 'first_key':
+                task_items.append(str(value))
+        task_text = ', '.join(task_items)
+        tasks_text += f'/{task_text}\n\n'
+
+    if tasks_text:
+        await bot.send_message(message.from_user.id, text='Всі завдання:\n\n{}'.format(tasks_text), reply_markup=cancel())

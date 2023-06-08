@@ -22,3 +22,12 @@ def cancel():
     m = ReplyKeyboardMarkup(resize_keyboard=True)
     m.insert(KeyboardButton('Відмінити'))
     return m
+
+
+def task_keyboard():
+    m = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    m1 = KeyboardButton('Початкові завдання')
+    m2 = KeyboardButton('Додаткові завдання')
+    m3 = KeyboardButton('Відмінити')
+    m.add(m1, m2, m3)
+    return m

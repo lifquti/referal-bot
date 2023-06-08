@@ -65,11 +65,30 @@ async def add_balance(id):
 
 async def get_referal(id):
     con, cur = await create_dict_con()
-    await cur.execute('select refer_from from data_tg_user where user_id = %S', (id, ))
+    await cur.execute('select refer_from from data_tg_user where user_id = %s', (id, ))
     refer_id = await cur.fetchone()
     await con.ensure_closed()
     return refer_id
 
 
+async def get_time_registration(id):
+    con, cur = await create_dict_con()
+    await cur.execute('select time_registration from data_tg_user where user_id = %s', (id, ))
+    date = await cur.fetchone()
+    await con.ensure_closed()
+    return date
 
 
+async def edit_do_or_not(id):
+    con, cur = await create_dict_con()
+    await cur.execute('update data_tg_user set do_or_not = 1 where user_id = %s', (id,))
+    await con.commit()
+    await con.ensure_closed()
+
+
+async def check_do_or_not(id):
+    con, cur = await create_dict_con()
+    await cur.execute('select do_or_not from data_tg_user where user_id = %s', (id,))
+    answer = await cur.fetchone()
+    await con.ensure_closed()
+    return answer

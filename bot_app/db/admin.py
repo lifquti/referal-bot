@@ -18,3 +18,20 @@ async def get_all_tasks():
     all_tasks = await cur.fetchall()
     await con.ensure_closed()
     return all_tasks
+
+
+async def get_all_new_tasks():
+    con, cur = await create_dict_con()
+    await cur.execute('select * from task_list_db')
+    all_tasks = await cur.fetchall()
+    await con.ensure_closed()
+    return all_tasks
+
+
+async def change_amin_task(new_values):
+    con, cur = await create_dict_con()
+    await cur.execute('update start_task set name_task, url = %s, %s where name_task = %s',
+                      (new_values['name'], new_values['url'], new_values['name_to_edit']))
+    await con.commit()
+    await con.ensure_closed()
+

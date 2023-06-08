@@ -10,5 +10,10 @@ class Admin(StatesGroup):
         status = State()
         payment = State()
 
+    class Edit_task(StatesGroup):
+        name_to_edit = State()
+        name = State()
+        new_url = State()
+
     class MassSend(StatesGroup):
         to_all_message = State()
