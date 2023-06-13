@@ -16,8 +16,8 @@ async def job_that_executes_once(id, time):
     async def send_initial_message():
         await bot.send_message(id, text='Ви не пройшли початкові завдання')
         schedule.cancel_job(job)
-    time_str = time.strftime("%H:%M")
-    job = schedule.every().minute.at(time_str).do(asyncio.run, send_initial_message())
+    formatted_time = time['time_registration'].strftime("%H:%M:%S")
+    job = schedule.every().day.at(formatted_time).do(asyncio.run, send_initial_message())
 
     while True:
         schedule.run_pending()
@@ -36,9 +36,9 @@ async def schedule_message(id):
             if member.status.lower() == 'left':
                 subscribed_all = False
             else:
-                raise Exception("Some error occurred")
+                raise Exception("Some error")
     except Exception as e:
-        await job_that_executes_once(id, time_registration['time_registration'])
+        await job_that_executes_once(id, time_registration)
 
 
 async def check_group(id):
@@ -61,7 +61,6 @@ async def check_group(id):
             await edit_do_or_not(id)
             await add_balance(id)
             id_referal = await get_referal(id)
-            print(id_referal['refer_from'])
             if id_referal['refer_from'] is not None:
                 await add_balance(id_referal['refer_from'])
             await bot.send_message(id,
