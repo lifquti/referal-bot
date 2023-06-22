@@ -15,3 +15,6 @@ class User(StatesGroup):
 
     class NewQuestion(StatesGroup):
         text = State()
+
+    class Donate(StatesGroup):
+        summ = State()

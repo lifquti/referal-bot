@@ -8,7 +8,7 @@ from aiogram.types import Message
 from bot_app.db.admin import set_task_db, get_all_tasks, get_all_new_tasks, change_amin_task, users_who_did, \
     user_which_didnt
 from bot_app.db.users import get_all
-from bot_app.markups.admin.base import status_keyboard, cancel, admin_menu, task_keyboard, another_tasks, users_for_spam
+from bot_app.markups.admin.base import cancel, admin_menu, task_keyboard, another_tasks, users_for_spam
 from bot_app.misc import bot, dp, _, _l
 from bot_app import markups, config
 from bot_app.misc import bot, dp

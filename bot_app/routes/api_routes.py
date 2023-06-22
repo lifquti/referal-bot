@@ -7,14 +7,11 @@ from aiohttp import web
 from bot_app.misc import routes, bot
 
 
-@routes.get(f'/{config.ROUTE_URL}/send_message')
+@routes.post(f'/{config.ROUTE_URL}/payment')
 async def get_handler(request):
-    tx_data = dict(request.query)
-    message_text = tx_data['message']
-    user_id = tx_data['user_id']
-
+    print(await request.json())
     try:
-        await bot.send_message(user_id, message_text)
+        print('ok')
     except Exception as e:
         return web.Response(status=404, body=str(e))
     return web.Response(status=200, body='ok')

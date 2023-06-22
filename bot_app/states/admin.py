@@ -5,10 +5,12 @@ class Admin(StatesGroup):
     main = State()
 
     class Task(StatesGroup):
-        url_task = State()
         name_task = State()
+        url_task = State()
         status = State()
         payment = State()
+        delete = State()
+        name_to_delete = State()
 
     class Edit_task(StatesGroup):
         name_to_edit = State()

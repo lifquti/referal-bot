@@ -1,4 +1,3 @@
-from aiogram.types import User
 from bot_app.db.base import create_dict_con
 
 
@@ -30,10 +29,10 @@ async def get_all_new_tasks():
 
 async def change_amin_task(new_values):
     con, cur = await create_dict_con()
-    await cur.execute('update start_task set name_task, url = %s, %s where name_task = %s',
+    await cur.execute('update start_task set name_task = %s, url = %s where name_task = %s',
                       (new_values['name'], new_values['url'], new_values['name_to_edit']))
     await con.commit()
-    await con.ensure_closed()
+    con.close()
 
 
 async def users_who_did():
@@ -50,3 +49,10 @@ async def user_which_didnt():
     users = await cur.fetchall()
     await con.ensure_closed()
     return users
+
+
+async def delete_task(name_channel):
+    con, cur = await create_dict_con()
+    await cur.execute('delete from task_list_db where `name` = %s', (name_channel,))
+    await con.commit()
+    await con.ensure_closed()

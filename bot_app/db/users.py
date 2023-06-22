@@ -41,16 +41,17 @@ async def get_all():
     return users
 
 
-async def update_locale(user_id: int, new_locale_code: str):
-    con, cur = await create_dict_con()
-    await cur.execute('update data_tg_user set `language` = %s where user_id = %s ', (new_locale_code, user_id,))
-    await con.commit()
-    await con.ensure_closed()
-
-
 async def check_start_task():
     con, cur = await create_dict_con()
     await cur.execute('select url from start_task')
+    urls_list = await cur.fetchall()
+    await con.ensure_closed()
+    return urls_list
+
+
+async def get_all_new_task():
+    con, cur = await create_dict_con()
+    await cur.execute('select url from task_list_db')
     urls_list = await cur.fetchall()
     await con.ensure_closed()
     return urls_list
@@ -92,3 +93,80 @@ async def check_do_or_not(id):
     answer = await cur.fetchone()
     await con.ensure_closed()
     return answer
+
+
+async def get_balance(id):
+    con, cur = await create_dict_con()
+    await cur.execute('select balance from data_tg_user where user_id = %s', (id,))
+    balance = await cur.fetchone()
+    await con.ensure_closed()
+    return balance
+
+
+async def tasks_info(id, url):
+    con, cur = await create_dict_con()
+    await cur.execute('select * from task_complete where user_id = %s and url = %s', (id, url))
+    task = await cur.fetchone()
+    await con.ensure_closed()
+    if task is None:
+        return None
+    else:
+        return task
+
+
+async def get_task_use_url(link):
+    con, cur = await create_dict_con()
+    await cur.execute('select name from task_list_db where url = %s', (link,))
+    name_task = await cur.fetchone()
+    await con.ensure_closed()
+    return name_task
+
+
+async def looking_for_link(link):
+    con, cur = await create_dict_con()
+    await cur.execute('select * from task_list_db where url = %s', (link,))
+    tasks_information = await cur.fetchone()
+    await con.ensure_closed()
+    return tasks_information
+
+
+async def check_payment_for_user(id, url):
+    con, cur = await create_dict_con()
+    await cur.execute('select * from task_complete where user_id, url = %s, %s', (id, url))
+    info = await cur.fetchone()
+    if info is None:
+        await cur.execute('update task_complete set user_id, url = %s, %s', (id, url))
+        await con.ensure_closed()
+        return None
+    else:
+        await con.ensure_closed()
+        return info
+
+
+async def add_balance_from_task(summ, id):
+    con, cur = await create_dict_con()
+    await cur.execute('select balance from data_tg_user where user_id = %s', (id,))
+    balance_before = await cur.fetchone()
+    balance_new = balance_before + summ
+    await cur.execute('UPDATE data_tg_user SET balance =  %s WHERE user_id = %s', (balance_new, id))
+    await con.commit()
+    await con.ensure_closed()
+
+
+async def check_task_in_task_db(url):
+    con, cur = await create_dict_con()
+    await cur.execute('select payment from task_list_db where url = %s', (url))
+    cost = await cur.fetchone()
+    if cost is None:
+        await con.ensure_closed()
+        return None
+    else:
+        await con.ensure_closed()
+        return cost
+
+
+async def complete_task(id, url):
+    con, cur = await create_dict_con()
+    await cur.execute('update task_complete set user_id = %s, url = %s', (id, url))
+    await con.commit()
+    await con.ensure_closed()
