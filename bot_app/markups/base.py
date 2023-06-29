@@ -33,8 +33,3 @@ async def new_task_for_user_ikb(dict):
     m.insert(InlineKeyboardButton(text=f'{dict["name"]}', url=dict["url"]))
     return m
 
-
-async def donate_link_ikb(link):
-    m = InlineKeyboardMarkup(resize=True)
-    m.insert(InlineKeyboardButton(text='Силка', url=link))
-    return m

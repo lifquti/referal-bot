@@ -11,7 +11,7 @@ from bot_app import markups, misc, db, config
 from bot_app.db.admin import get_all_tasks
 from bot_app.db.users import get_user, create_user, check_start_task, add_balance, get_referal, get_time_registration, \
     edit_do_or_not, check_do_or_not, get_balance, tasks_info, get_all_new_task, looking_for_link, \
-    check_payment_for_user, add_balance_from_task, check_task_in_task_db, complete_task
+    check_payment_for_user, add_balance_from_task, check_task_in_task_db, complete_task, tasks_information
 from bot_app.markups.base import links_ikb, channel_ikb, new_tasks_ikb
 from bot_app.markups.user.main import user_main_menu, balance_menu
 from bot_app.misc import bot, dp, _, _l
@@ -59,9 +59,11 @@ async def check_group(id):
             id_referal = await get_referal(id)
             if id_referal['refer_from'] is not None:
                 await add_balance(id_referal['refer_from'])
+                await bot.send_message(id_referal['refer_from'], text='По реферальній силці юзер пройшов завдання і ви отримуєте'
+                                                                      'разом із ним 5 гривень')
             await bot.send_message(id,
-                                   text='Ви підписані на всі базові канали и отримали 5 гривен на баланс, '
-                                        'а також ваш реферал, якщо ві є', reply_markup=user_main_menu())
+                                   text='Ви підписані на всі базові канали и отримали 5 гривень на баланс, '
+                                        'а також ваш реферал, якщо він є', reply_markup=user_main_menu())
 
 
 @dp.message_handler(commands='start', state='*', chat_type=ChatType.PRIVATE)
@@ -100,13 +102,14 @@ async def user_joined_chat(update: types.ChatMemberUpdated):
         return
 
     had_a_task_payment = await check_task_in_task_db(link_task)
-    do_task = await tasks_info(update.from_user.id, link_task)
-    if had_a_task_payment is None and do_task is None:
+    print(had_a_task_payment)
+    do_task = await tasks_information(update.from_user.id, link_task)
+    if had_a_task_payment is None or do_task is not None:
         return
 
-    await add_balance_from_task(had_a_task_payment, update.from_user.id)
+    await add_balance_from_task(had_a_task_payment['payment'], update.from_user.id)
     await complete_task(update.from_user.id, link_task)
-    await bot.send_message(update.from_user.id, text=f'Ви отрамли на баланс {had_a_task_payment}')
+    await bot.send_message(update.from_user.id, text=f'Ви отрамли на баланс {had_a_task_payment["payment"]}')
 
 
 @dp.message_handler(text='Перевірити підписки', chat_type=ChatType.PRIVATE)
@@ -152,21 +155,20 @@ async def new_task_for_user(message: Message):
     task_which_user_did = await tasks_info(message.from_user.id)
     all_task = await get_all_new_task()
     new_links = []
-    try:
-        for task in all_task:
-            found = False
-            for task_user in task_which_user_did:
-                if task['url'] == task_user['url']:
-                    found = True
-                    break
-            if not found:
-                new_links.append(task['url'])
+    for task in all_task:
+        found = False
+        for task_user in task_which_user_did:
+            if task['url'] == task_user['url']:
+                found = True
+                break
+        if not found:
+            new_links.append(task['url'])
 
+    if new_links:
         await bot.send_message(message.from_user.id,
                                text='Нижче представлені нові завдання',
                                reply_markup=await new_tasks_ikb(new_links))
-
-    except:
+    else:
         await bot.send_message(message.from_user.id,
                                text="Зараз немає нових завдань, ви отримаєте сповіщення коли воно з'явиться")
 

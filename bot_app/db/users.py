@@ -51,7 +51,7 @@ async def check_start_task():
 
 async def get_all_new_task():
     con, cur = await create_dict_con()
-    await cur.execute('select url from task_list_db')
+    await cur.execute('select url from task_list_db where status_of_task = True')
     urls_list = await cur.fetchall()
     await con.ensure_closed()
     return urls_list
@@ -103,7 +103,18 @@ async def get_balance(id):
     return balance
 
 
-async def tasks_info(id, url):
+async def tasks_info(id):
+    con, cur = await create_dict_con()
+    await cur.execute('select url from task_complete where user_id = %s', (id, ))
+    task = await cur.fetchall()
+    await con.ensure_closed()
+    if task is None:
+        return None
+    else:
+        return task
+
+
+async def tasks_information(id, url):
     con, cur = await create_dict_con()
     await cur.execute('select * from task_complete where user_id = %s and url = %s', (id, url))
     task = await cur.fetchone()
@@ -147,7 +158,7 @@ async def add_balance_from_task(summ, id):
     con, cur = await create_dict_con()
     await cur.execute('select balance from data_tg_user where user_id = %s', (id,))
     balance_before = await cur.fetchone()
-    balance_new = balance_before + summ
+    balance_new = int(balance_before['balance']) + summ
     await cur.execute('UPDATE data_tg_user SET balance =  %s WHERE user_id = %s', (balance_new, id))
     await con.commit()
     await con.ensure_closed()
@@ -167,6 +178,6 @@ async def check_task_in_task_db(url):
 
 async def complete_task(id, url):
     con, cur = await create_dict_con()
-    await cur.execute('update task_complete set user_id = %s, url = %s', (id, url))
+    await cur.execute('insert ignore into task_complete set user_id = %s, url = %s', (id, url))
     await con.commit()
     await con.ensure_closed()

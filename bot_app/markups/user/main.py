@@ -9,7 +9,6 @@ def user_main_menu():
     m2 = KeyboardButton(text='Реферальна програма')
     m3 = KeyboardButton(text='Баланс')
     m.add(m1, m2, m3)
-    m.add(KeyboardButton(text='Задонатити'))
     return m
 
 
